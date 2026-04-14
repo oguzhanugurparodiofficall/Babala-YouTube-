@@ -9,33 +9,37 @@ const client = new Client({
     ]
 });
 
-const YOUTUBE_CHANNEL_ID = 'UCsT8cMFwAK3cqSUFbSv9OxA';
 const DISCORD_CHANNEL_ID = '1216975782514135211';
-let lastVideoId = null;
+
+const channels = [
+    { id: 'UCsT8cMFwAK3cqSUFbSv9OxA', name: 'Babala TV', lastVideoId: null },
+    { id: 'UCCsdGCxobBuWh1dUYCeRBoQ', name: 'Babalayka', lastVideoId: null }
+];
 
 async function checkYoutube() {
-  try {
-    const res = await axios.get('https://www.youtube.com/feeds/videos.xml?channel_id=' + YOUTUBE_CHANNEL_ID);
-    const match = res.data.match(/<yt:videoId>(.*?)<\/yt:videoId>/);
-    if (match) {
-      const videoId = match[1];
-      if (lastVideoId && lastVideoId !== videoId) {
-        const channel = client.channels.cache.get(DISCORD_CHANNEL_ID);
-        if (channel) channel.send('Babala TV yeni video yukledi https://youtube.com/watch?v=' + videoId);
-      }
-      lastVideoId = videoId;
-      console.log('Kontrol edildi:', videoId);
+    for (const ch of channels) {
+        try {
+            const res = await axios.get('https://www.youtube.com/feeds/videos.xml?channel_id=' + ch.id);
+            const match = res.data.match(/<yt:videoId>(.*?)<\/yt:videoId>/);
+            if (match) {
+                const videoId = match[1];
+                if (ch.lastVideoId && ch.lastVideoId !== videoId) {
+                    const channel = client.channels.cache.get(DISCORD_CHANNEL_ID);
+                    if (channel) channel.send(ch.name + ' yeni video yukledi! https://youtube.com/watch?v=' + videoId);
+                }
+                ch.lastVideoId = videoId;
+                console.log(ch.name + ' kontrol edildi:', videoId);
+            }
+        } catch (e) {
+            console.log(ch.name + ' hata:', e.message);
+        }
     }
-  } catch (e) {
-    console.log('Hata:', e.message);
-  }
 }
 
 client.once('ready', () => {
-  console.log('Bot aktif: ' + client.user.tag);
-  checkYoutube();
-  setInterval(checkYoutube, 5 * 60 * 1000);
+    console.log('Bot aktif: ' + client.user.tag);
+    checkYoutube();
+    setInterval(checkYoutube, 5 * 60 * 1000);
 });
 
-client.login(process.env.f93686b3e1b54b214faa53c75a5163bf4c856d149c0acba90cc03e560db57d2a
-            );
+client.login(process.env.TOKEN);
